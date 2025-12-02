@@ -1,0 +1,337 @@
+/* ===== Global Layout ===== */
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #ffffff;
+    color: #222;
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+/* ===== Header ===== */
+.header h1 {
+    background: #4b4b4b;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 14px;
+    font-size: 28px;
+    margin: 0;
+}
+
+/* ===== Top Date Filter ===== */
+.top-date-filter {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.top-date-filter label {
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.top-date-filter .react-datepicker-wrapper {
+    display: inline-block;
+}
+
+/* ===== Two-column layout ===== */
+.main-content {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+/* Left content */
+.left-content {
+    flex: 1;
+}
+
+/* Right content */
+.right-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* ===== Stats Section ===== */
+.stats {
+    display: flex;
+    gap: 20px;
+    margin-top: 25px;
+}
+
+.stat-card {
+    background: #d1d1d1;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.stat-card strong {
+    font-size: 22px;
+    margin-top: 4px;
+}
+
+.positive { color: #0a8f39; font-weight: bold; }
+.negative { color: #c91d1d; font-weight: bold; }
+
+/* ===== Table Section ===== */
+.table-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.table-wrapper {
+    margin-top: 10px;
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.beautiful-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    background: white;
+    border-radius: 12px;
+}
+
+.beautiful-table thead { background: #f0f0f0; }
+
+.beautiful-table th {
+    padding: 14px 12px;
+    font-weight: 600;
+    text-align: left;
+    color: #333;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.beautiful-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid #eaeaea;
+    color: black;
+}
+
+.beautiful-table tbody tr:hover {
+    background: #f9f9f9;
+    transition: 0.2s ease-in-out;
+}
+
+.empty-row {
+    text-align: center;
+    padding: 40px 0;
+    color: #888;
+    font-style: italic;
+}
+
+/* ===== Earnings Section ===== */
+.earnings-section {
+    background: #f0f8ff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.earnings-boxes {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    flex-wrap: nowrap;
+}
+
+.earnings-box {
+    flex: 1;
+    background: #f0f8ff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.selected-companies-box {
+    background: #e6f0ff;
+}
+
+.earnings-box h3 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 15px;
+}
+
+.earnings-box ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.earnings-box ul li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #d0e0ff;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.earnings-box ul li span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.earnings-box button {
+    background: #0073e6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.earnings-box button:hover {
+    background: #005bb5;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+    gap: 10px;
+}
+
+.pagination button {
+    padding: 4px 10px;
+    border: 1px solid #0073e6;
+    border-radius: 6px;
+    background: white;
+    color: #0073e6;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination span {
+    font-weight: 500;
+}
+
+.submit-button {
+    align-self: flex-end;
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+.submit-button:hover {
+    background: #218838;
+}
+
+/* Error message */
+.error-message {
+    color: #c91d1d;
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* ===== Trading Settings ===== */
+.trading-settings {
+    background: #f7f7f7;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.trading-settings h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.trading-settings-grid {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.trading-setting-item {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+.trading-setting-item label {
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.trading-setting-item input {
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid #bfbfbf;
+    background: #d5f1d3;
+    text-align: center;
+    font-size: 16px;
+    color: black;
+}
+
+/* ===== Historical Operations ===== */
+.historical-operations {
+    margin-top: 30px;
+}
+
+.historical-box {
+    margin-top: 20px;
+}
+
+.historical-box h3 {
+    margin-bottom: 10px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+    .main-content { flex-direction: column; }
+    .earnings-boxes { flex-direction: column; gap: 15px; }
+}
+
+@media (max-width: 768px) {
+    .stats { flex-direction: column; width: 100%; }
+    .trading-settings-grid, .earnings-boxes {
+        flex-direction: column;
+    }
+    .top-date-filter {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+}

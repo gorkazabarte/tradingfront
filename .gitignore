@@ -1,0 +1,7 @@
+# JetBrains
+**/.idea
+
+# JS
+**/node_modules
+**/dist
+**/build
