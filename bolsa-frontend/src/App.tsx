@@ -144,16 +144,11 @@ export default function App() {
 
                     setAllEarningsForMonth(companiesForDate);
 
-                    // Always reset and select all companies for the new date
-                    setSelectedCompanies(companiesForDate);
-                    setEarnings([]);
+                    // Keep companies in the Earnings box by default
+                    setEarnings(companiesForDate);
+                    // Don't modify selected companies when date changes
 
-                    // Check if auto-selected companies exceed the limit
-                    if (companiesForDate.length > opsPerDay) {
-                        setErrorMessage(`You reached the maximum number of selected companies (${opsPerDay}).`);
-                    } else {
-                        setErrorMessage("");
-                    }
+                    setErrorMessage("");
 
                     setIsLoadingEarnings(false);
                 })
@@ -164,7 +159,6 @@ export default function App() {
                 });
         } else {
             setEarnings([]);
-            setSelectedCompanies([]);
             setAllEarningsForMonth([]);
             setErrorMessage("");
         }
@@ -185,13 +179,18 @@ export default function App() {
 
     const moveBackToEarnings = (company: Company) => {
         setSelectedCompanies(prev => prev.filter(c => c.ticker !== company.ticker));
-        setEarnings(prev => {
-            // Only add back if it's in the original earnings for the month
-            if (allEarningsForMonth.some(c => c.ticker === company.ticker)) {
-                return [...prev, company];
-            }
-            return prev;
-        });
+
+        // Only add back to earnings if it's from the current selected date
+        if (allEarningsForMonth.some(c => c.ticker === company.ticker)) {
+            setEarnings(prev => {
+                // Only add back if it's not already in the earnings list
+                if (!prev.some(c => c.ticker === company.ticker)) {
+                    return [...prev, company];
+                }
+                return prev;
+            });
+        }
+
         setErrorMessage("");
     };
 
@@ -687,96 +686,106 @@ export default function App() {
                             </div>
                         ) : (
                             <>
-                                <div className="earnings-boxes">
-                                    <div className="earnings-box">
-                                        <h3>Earnings</h3>
-                                        <ul>
-                                            {paginatedEarnings.map((company, index) => (
-                                                <li key={index}>
-                                                    <span>{company.ticker} ({company.reportTime})</span>
-                                                    <button onClick={() => moveToSelected(company)}>→</button>
-                                                </li>
-                                            ))}
-                                            {earnings.length === 0 && !isLoadingEarnings && <p>No companies available.</p>}
-                                        </ul>
-                                {earnings.length > itemsPerPage && (
-                                    <div className="pagination">
-                                        <button
-                                            onClick={() => setEarningsPage(prev => Math.max(1, prev - 1))}
-                                            disabled={earningsPage === 1}
-                                        >
-                                            ←
-                                        </button>
-                                        <span>Page {earningsPage} of {Math.ceil(earnings.length / itemsPerPage)}</span>
-                                        <button
-                                            onClick={() => setEarningsPage(prev => Math.min(Math.ceil(earnings.length / itemsPerPage), prev + 1))}
-                                            disabled={earningsPage === Math.ceil(earnings.length / itemsPerPage)}
-                                        >
-                                            →
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="earnings-box selected-companies-box">
-                                <h3>Selected Companies</h3>
-                                <ul>
-                                    {paginatedSelected.map((company, index) => (
-                                        <li key={index}>
-                                            <span>
-                                                {company.ticker} ({company.reportTime}) - ${company.currentPrice?.toFixed(2) || 'N/A'}
-                                                {company.percentageChange90d !== undefined && (
-                                                    <span className={company.percentageChange90d >= 0 ? "positive" : "negative"}>
-                                                        {' '}({company.percentageChange90d > 0 ? '+' : ''}{company.percentageChange90d.toFixed(2)}%)
-                                                    </span>
-                                                )}
-                                            </span>
-                                            <button onClick={() => moveBackToEarnings(company)}>←</button>
-                                        </li>
-                                    ))}
-                                    {selectedCompanies.length === 0 && <p>No companies selected.</p>}
-                                </ul>
-                                {selectedCompanies.length > itemsPerPage && (
-                                    <div className="pagination">
-                                        <button
-                                            onClick={() => setSelectedPage(prev => Math.max(1, prev - 1))}
-                                            disabled={selectedPage === 1}
-                                        >
-                                            ←
-                                        </button>
-                                        <span>Page {selectedPage} of {Math.ceil(selectedCompanies.length / itemsPerPage)}</span>
-                                        <button
-                                            onClick={() => setSelectedPage(prev => Math.min(Math.ceil(selectedCompanies.length / itemsPerPage), prev + 1))}
-                                            disabled={selectedPage === Math.ceil(selectedCompanies.length / itemsPerPage)}
-                                        >
-                                            →
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                                {errorMessage && <div className="error-message">{errorMessage}</div>}
-
-                                {/* Submit and Download buttons for Earnings section */}
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                                    <button
-                                        className="submit-button"
-                                        onClick={() => setShowEarningsModal(true)}
-                                        disabled={selectedCompanies.length > opsPerDay}
-                                        style={{ flex: 1 }}
-                                    >
-                                        Submit
-                                    </button>
-                                    <button
-                                        className="submit-button"
-                                        onClick={downloadSelectedCompanies}
-                                        disabled={selectedCompanies.length === 0}
-                                        style={{ flex: 1, backgroundColor: '#28a745' }}
-                                    >
-                                        Download TXT
-                                    </button>
+                                <div className="earnings-box">
+                                    <h3>Earnings</h3>
+                                    <ul>
+                                        {paginatedEarnings.map((company, index) => (
+                                            <li key={index}>
+                                                <span>
+                                                    {company.ticker} ({company.reportTime}) - ${company.currentPrice?.toFixed(2) || 'N/A'}
+                                                    {company.percentageChange90d !== undefined && (
+                                                        <span className={company.percentageChange90d >= 0 ? "positive" : "negative"}>
+                                                            {' '}({company.percentageChange90d > 0 ? '+' : ''}{company.percentageChange90d.toFixed(2)}%)
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <button onClick={() => moveToSelected(company)}>Select</button>
+                                            </li>
+                                        ))}
+                                        {earnings.length === 0 && !isLoadingEarnings && <p>No companies available.</p>}
+                                    </ul>
+                                    {earnings.length > itemsPerPage && (
+                                        <div className="pagination">
+                                            <button
+                                                onClick={() => setEarningsPage(prev => Math.max(1, prev - 1))}
+                                                disabled={earningsPage === 1}
+                                            >
+                                                ←
+                                            </button>
+                                            <span>Page {earningsPage} of {Math.ceil(earnings.length / itemsPerPage)}</span>
+                                            <button
+                                                onClick={() => setEarningsPage(prev => Math.min(Math.ceil(earnings.length / itemsPerPage), prev + 1))}
+                                                disabled={earningsPage === Math.ceil(earnings.length / itemsPerPage)}
+                                            >
+                                                →
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </>
                         )}
+                    </section>
+
+                    {/* Selected Companies Section */}
+                    <section className="earnings-section">
+                        <h2>Selected Companies for Today</h2>
+                        <div className="earnings-box selected-companies-box">
+                            <h3>Selected Companies ({selectedCompanies.length})</h3>
+                            <ul>
+                                {paginatedSelected.map((company, index) => (
+                                    <li key={index}>
+                                        <span>
+                                            {company.ticker} ({company.reportTime}) - ${company.currentPrice?.toFixed(2) || 'N/A'}
+                                            {company.percentageChange90d !== undefined && (
+                                                <span className={company.percentageChange90d >= 0 ? "positive" : "negative"}>
+                                                    {' '}({company.percentageChange90d > 0 ? '+' : ''}{company.percentageChange90d.toFixed(2)}%)
+                                                </span>
+                                            )}
+                                        </span>
+                                        <button onClick={() => moveBackToEarnings(company)}>Selected</button>
+                                    </li>
+                                ))}
+                                {selectedCompanies.length === 0 && <p>No companies selected.</p>}
+                            </ul>
+                            {selectedCompanies.length > itemsPerPage && (
+                                <div className="pagination">
+                                    <button
+                                        onClick={() => setSelectedPage(prev => Math.max(1, prev - 1))}
+                                        disabled={selectedPage === 1}
+                                    >
+                                        ←
+                                    </button>
+                                    <span>Page {selectedPage} of {Math.ceil(selectedCompanies.length / itemsPerPage)}</span>
+                                    <button
+                                        onClick={() => setSelectedPage(prev => Math.min(Math.ceil(selectedCompanies.length / itemsPerPage), prev + 1))}
+                                        disabled={selectedPage === Math.ceil(selectedCompanies.length / itemsPerPage)}
+                                    >
+                                        →
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        {errorMessage && <div className="error-message">{errorMessage}</div>}
+
+                        {/* Submit and Download buttons for Selected Companies section */}
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                            <button
+                                className="submit-button"
+                                onClick={() => setShowEarningsModal(true)}
+                                disabled={selectedCompanies.length > opsPerDay}
+                                style={{ flex: 1 }}
+                            >
+                                Submit
+                            </button>
+                            <button
+                                className="submit-button"
+                                onClick={downloadSelectedCompanies}
+                                disabled={selectedCompanies.length === 0}
+                                style={{ flex: 1, backgroundColor: '#28a745' }}
+                            >
+                                Download TXT
+                            </button>
+                        </div>
                     </section>
 
                     {/* Trading Settings Section */}
