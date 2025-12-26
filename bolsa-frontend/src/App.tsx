@@ -242,12 +242,14 @@ export default function App() {
 
         const content = selectedCompanies.map(company => company.ticker).join('\n');
 
-        // Create a blob and download
+        // Create a blob and download - always use today's date
+        const today = new Date();
+        const dateString = today.toISOString().split('T')[0];
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `selected-companies-${selectedDate ? selectedDate.toISOString().split('T')[0] : 'export'}.txt`;
+        link.download = `selected-companies-${dateString}.txt`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -259,9 +261,10 @@ export default function App() {
 
         const companyTickers = selectedCompanies.map(company => company.ticker);
 
-        const year = selectedDate ? selectedDate.getFullYear() : null;
-        const month = selectedDate ? selectedDate.getMonth() + 1 : null;
-        const day = selectedDate ? selectedDate.getDate() : null;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
 
         const earningsData = {
             companies: companyTickers,
@@ -270,7 +273,7 @@ export default function App() {
             day: day
         };
 
-        console.log("Submitting earnings companies:", earningsData);
+        console.log("Submitting earnings companies for today:", earningsData);
 
         // Make POST request to companies API
         fetch('https://grv8xax0z5.execute-api.us-west-2.amazonaws.com/companies', {
@@ -308,9 +311,13 @@ export default function App() {
             }
 
             console.log('Companies submitted successfully:', data);
+
+            const today = new Date();
+            const s3Key = `/${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+
             setResponseMessage({
                 type: 'success',
-                message: data.message || 'Companies submitted successfully!'
+                message: `Companies list uploaded successfully!\n\nS3 Key: ${s3Key}`
             });
             setShowResponseModal(true);
         })
@@ -728,7 +735,7 @@ export default function App() {
 
                     {/* Selected Companies Section */}
                     <section className="earnings-section">
-                        <h2>Selected Companies for Today</h2>
+                        <h2>Selected Companies for Today ({new Date().toLocaleDateString()})</h2>
                         <div className="earnings-box selected-companies-box">
                             <h3>Selected Companies ({selectedCompanies.length})</h3>
                             <ul>
@@ -865,12 +872,12 @@ export default function App() {
             {showEarningsModal && (
                 <div className="modal-overlay" onClick={() => setShowEarningsModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h2>Confirm Selected Companies</h2>
-                        <p>Are you sure you want to submit the following companies?</p>
+                        <h2>Confirm Selected Companies for Today</h2>
+                        <p>Are you sure you want to submit the following companies for {new Date().toLocaleDateString()}?</p>
                         <div className="modal-list">
                             {selectedCompanies.map((company, index) => (
                                 <div key={index} className="modal-list-item">
-                                    <strong>{company.ticker}</strong> - {company.name} ({company.reportTime}) - ${company.currentPrice?.toFixed(2) || 'N/A'}
+                                    <strong>{company.ticker}</strong> - {company.name} ({company.reportTime}) - {company.currentPrice ? `$${company.currentPrice.toFixed(2)}` : 'N/A'}
                                     {company.percentageChange90d !== undefined && (
                                         <span className={company.percentageChange90d >= 0 ? "positive" : "negative"}>
                                             {' '}({company.percentageChange90d > 0 ? '+' : ''}{company.percentageChange90d.toFixed(2)}%)
@@ -878,6 +885,9 @@ export default function App() {
                                     )}
                                 </div>
                             ))}
+                        </div>
+                        <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px', fontSize: '14px' }}>
+                            <strong>S3 Key:</strong> /{new Date().getFullYear()}/{new Date().getMonth() + 1}/{new Date().getDate()}
                         </div>
                         <div className="modal-actions">
                             <button className="modal-button cancel" onClick={() => setShowEarningsModal(false)}>
