@@ -38,6 +38,30 @@ interface OpenPosition {
     orderFilled: boolean;
 }
 
+interface HistoricalPosition {
+    symbol: string;
+    buy_date: string;
+    sell_date?: string;
+    buy_price: number;
+    sell_price: number;
+    quantity: number;
+    profit: number;
+    return_pct: number;
+}
+
+interface HistoricalData {
+    period: string;
+    statistics: {
+        total_trades: number;
+        winning_trades: number;
+        losing_trades: number;
+        total_profit: number;
+        avg_profit_per_trade: number;
+        win_rate: number;
+    };
+    positions: HistoricalPosition[];
+}
+
 export default function App() {
     const { logout, getAuthToken } = useAuth();
 
@@ -58,6 +82,8 @@ export default function App() {
 
     // Historical operations filter
     const [historicalPeriod, setHistoricalPeriod] = useState(5);
+    const [historicalData, setHistoricalData] = useState<HistoricalData | null>(null);
+    const [isLoadingHistorical, setIsLoadingHistorical] = useState(false);
 
     const [operations] = useState<Operation[]>([]);
 
@@ -222,6 +248,41 @@ export default function App() {
         fetchSettings();
     }, [getAuthToken]);
 
+    // Fetch historical operations data when period changes
+    useEffect(() => {
+        const fetchHistoricalOperations = async () => {
+            setIsLoadingHistorical(true);
+            try {
+                console.log(`Fetching historical operations for ${historicalPeriod} days...`);
+                const response = await authenticatedFetch(
+                    `https://grv8xax0z5.execute-api.us-west-2.amazonaws.com/operations?days=${historicalPeriod}`,
+                    {
+                        method: 'GET',
+                    },
+                    getAuthToken
+                );
+
+                console.log('Historical operations response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Historical operations data received:', data);
+
+                setHistoricalData(data);
+                setIsLoadingHistorical(false);
+            } catch (error) {
+                console.error('Error fetching historical operations:', error);
+                setIsLoadingHistorical(false);
+                setHistoricalData(null);
+            }
+        };
+
+        fetchHistoricalOperations();
+    }, [historicalPeriod, getAuthToken]);
+
     useEffect(() => {
         if (selectedDate) {
             const year = selectedDate.getFullYear();
@@ -329,24 +390,6 @@ export default function App() {
     const totalProfit = filteredOperations.reduce((sum, op) => sum + op.profit, 0);
     const uniqueDays = Array.from(new Set(filteredOperations.map((op) => op.date))).length;
     const profitPerDay = uniqueDays > 0 ? totalProfit / uniqueDays : 0;
-
-    const getHistoricalOperations = (days: number) => {
-        if (operations.length === 0) return [];
-
-        // Use today's date as the reference point
-        const today = new Date();
-        today.setHours(23, 59, 59, 999); // End of today
-
-        // Calculate the threshold date (days before today)
-        const thresholdDate = new Date(today);
-        thresholdDate.setDate(today.getDate() - days);
-        thresholdDate.setHours(0, 0, 0, 0); // Start of that day
-
-        return operations.filter(op => {
-            const opDate = new Date(op.date);
-            return opDate >= thresholdDate && opDate <= today;
-        });
-    };
 
     const downloadSelectedCompanies = () => {
         if (selectedCompanies.length === 0) {
@@ -652,10 +695,10 @@ export default function App() {
                                     onChange={(e) => setHistoricalPeriod(Number(e.target.value))}
                                     className="period-select"
                                 >
-                                    <option value={5}>Previous 5 days</option>
-                                    <option value={10}>Previous 10 days</option>
-                                    <option value={15}>Previous 15 days</option>
-                                    <option value={30}>Previous 30 days</option>
+                                    <option value={5}>Last 5 days</option>
+                                    <option value={10}>Last 10 days</option>
+                                    <option value={15}>Last 15 days</option>
+                                    <option value={30}>Last 30 days</option>
                                 </select>
                             </div>
                         </div>
@@ -664,63 +707,89 @@ export default function App() {
                                 <table className="beautiful-table">
                                     <thead>
                                     <tr>
-                                        <th>Date</th>
                                         <th>Symbol</th>
+                                        <th>Buy Date</th>
+                                        <th>Sell Date</th>
                                         <th>Buy Price</th>
                                         <th>Sell Price</th>
-                                        <th>Shares</th>
+                                        <th>Quantity</th>
                                         <th>Profit</th>
                                         <th>Return (%)</th>
-                                        <th>Sell Type</th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {getHistoricalOperations(historicalPeriod).length === 0 ? (
+                                    {isLoadingHistorical ? (
+                                        <tr>
+                                            <td colSpan={8} className="empty-row">
+                                                Loading historical operations...
+                                            </td>
+                                        </tr>
+                                    ) : !historicalData || historicalData.positions.length === 0 ? (
                                         <tr>
                                             <td colSpan={8} className="empty-row">No operations</td>
                                         </tr>
                                     ) : (
-                                        getHistoricalOperations(historicalPeriod).map((op, i) => (
+                                        historicalData.positions.map((op, i) => (
                                             <tr key={i}>
-                                                <td>{op.date}</td>
                                                 <td>{op.symbol}</td>
-                                                <td>{op.buyPrice}</td>
-                                                <td>{op.sellPrice}</td>
-                                                <td>{op.shares}</td>
-                                                <td className={op.profit >= 0 ? "positive" : "negative"}>{op.profit} $</td>
-                                                <td className={op.returnPercent >= 0 ? "positive" : "negative"}>{op.returnPercent}%</td>
-                                                <td>{op.sellType}</td>
+                                                <td>{op.buy_date}</td>
+                                                <td>{op.sell_date || 'N/A'}</td>
+                                                <td>${op.buy_price.toFixed(2)}</td>
+                                                <td>${op.sell_price.toFixed(2)}</td>
+                                                <td>{op.quantity}</td>
+                                                <td className={op.profit >= 0 ? "positive" : "negative"}>${op.profit.toFixed(2)}</td>
+                                                <td className={op.return_pct >= 0 ? "positive" : "negative"}>{op.return_pct.toFixed(2)}%</td>
                                             </tr>
                                         ))
                                     )}
                                     </tbody>
                                 </table>
                             </div>
-                            {getHistoricalOperations(historicalPeriod).length > 0 && (
+                            {historicalData && historicalData.positions.length > 0 && (
                                 <div className="operations-stats">
                                     <div className="stat-card">
+                                        <span>Total Trades</span>
+                                        <strong>{historicalData.statistics.total_trades}</strong>
+                                    </div>
+                                    <div className="stat-card">
                                         <span>Overall Profit</span>
-                                        <strong className={getHistoricalOperations(historicalPeriod).reduce((sum, op) => sum + op.profit, 0) >= 0 ? "positive" : "negative"}>
-                                            {getHistoricalOperations(historicalPeriod).reduce((sum, op) => sum + op.profit, 0).toFixed(2)} $
+                                        <strong className={historicalData.statistics.total_profit >= 0 ? "positive" : "negative"}>
+                                            ${historicalData.statistics.total_profit.toFixed(2)}
+                                        </strong>
+                                    </div>
+                                    <div className="stat-card">
+                                        <span>Avg Profit/Trade</span>
+                                        <strong className={historicalData.statistics.avg_profit_per_trade >= 0 ? "positive" : "negative"}>
+                                            ${historicalData.statistics.avg_profit_per_trade.toFixed(2)}
                                         </strong>
                                     </div>
                                     <div className="stat-card">
                                         <span>Win/Loss Rate</span>
                                         <strong>
-                                            <span className="positive">{getHistoricalOperations(historicalPeriod).filter(op => op.profit >= 0).length}</span>
+                                            <span className="positive">{historicalData.statistics.winning_trades}</span>
                                             {" / "}
-                                            <span className="negative">{getHistoricalOperations(historicalPeriod).filter(op => op.profit < 0).length}</span>
+                                            <span className="negative">{historicalData.statistics.losing_trades}</span>
                                         </strong>
                                         <div style={{ fontSize: '14px', marginTop: '8px', color: '#666' }}>
-                                            {((getHistoricalOperations(historicalPeriod).filter(op => op.profit >= 0).length / getHistoricalOperations(historicalPeriod).length) * 100).toFixed(1)}% Win Rate
+                                            {historicalData.statistics.win_rate.toFixed(1)}% Win Rate
                                         </div>
                                     </div>
                                     <div className="stat-card">
                                         <span>$ Won / $ Lost</span>
                                         <strong>
-                                            <span className="positive">{getHistoricalOperations(historicalPeriod).filter(op => op.profit >= 0).reduce((sum, op) => sum + op.profit, 0).toFixed(2)} $</span>
+                                            <span className="positive">
+                                                ${historicalData.positions
+                                                    .filter(op => op.profit >= 0)
+                                                    .reduce((sum, op) => sum + op.profit, 0)
+                                                    .toFixed(2)}
+                                            </span>
                                             {" / "}
-                                            <span className="negative">{Math.abs(getHistoricalOperations(historicalPeriod).filter(op => op.profit < 0).reduce((sum, op) => sum + op.profit, 0)).toFixed(2)} $</span>
+                                            <span className="negative">
+                                                ${Math.abs(historicalData.positions
+                                                    .filter(op => op.profit < 0)
+                                                    .reduce((sum, op) => sum + op.profit, 0))
+                                                    .toFixed(2)}
+                                            </span>
                                         </strong>
                                     </div>
                                 </div>
